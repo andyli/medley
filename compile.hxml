@@ -1,0 +1,8 @@
+-main Test
+-swf bin/Test.swf
+-swf-version 10
+#-neko bin/Test.n
+-lib hsl-1
+
+-cmd open bin/Test.swf
+#-cmd neko bin/Test.n
