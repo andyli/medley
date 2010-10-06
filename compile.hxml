@@ -1,6 +1,7 @@
 -main Test
 -swf bin/Test.swf
 -swf-version 10
+-swf-header 400:300:24:FFFFFF
 -lib hsl-1
 
 -cmd open bin/Test.swf

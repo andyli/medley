@@ -1,4 +1,4 @@
-package feffects.easing;
+package medley.easing;
 
 class Expo implements haxe.Public
 {

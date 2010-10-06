@@ -1,4 +1,4 @@
-package feffects.easing;
+package medley.easing;
 
 class Bounce implements haxe.Public
 {

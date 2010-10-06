@@ -16,10 +16,26 @@ class Test extends Sprite{
 			sp.x = sp.y = 100;
 			addChild(sp);
 			
-			var m = new Medley();
+			var m = new Medley(medley.easing.Bounce.easeOut);
 			m.duration = 3;
 			m.events.tick.bind(function(val:Float) {
 				sp.x = 100 + val * 100;
+			});
+			/*
+			m.events.reachStart.bindVoid(function() {
+				trace("reachStart");
+				m.timeScale = 1;
+				m.play();
+			});
+			m.events.reachEnd.bindVoid(function() {
+				trace("reachEnd");
+				m.timeScale = -1;
+				m.play();
+			});*/
+			m.events.stop.bindVoid(function() {
+				trace("stop");
+				m.timeScale *= -1;
+				m.play();
 			});
 			m.play();
 		}
