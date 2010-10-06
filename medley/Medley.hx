@@ -1,18 +1,19 @@
 package medley;
 
+import medley.events.MedleyEvents;
 import medley.metronome.GlobalMetronome;
 import medley.metronome.IMetronome;
 import haxe.Timer;
 
 class Medley {
-	public function new(?medleys:Array<Medley>, ?metronome:IMetronome):Void {
-		id = nextId++;
+	public function new(?startValue:Float = 0, ?endValue:Float = 1, ?medleys:Array<Medley>):Void {
 		this.medleys = medleys == null ? [] : medleys;
-		this.metronome = metronome == null ? GlobalMetronome.getInstance() : metronome;
-		start = 0;
-		end = 1;
+		
+		this.startValue = startValue;
+		this.endValue = endValue;
 		timeProgress = 0;
 		events = new MedleyEvents(this);
+		metronome = GlobalMetronome.getInstance();
 	}
 
 	/*
@@ -22,7 +23,6 @@ class Medley {
 		if (!isPlaying) {
 			timePrevious = Timer.stamp();
 
-			playingMedleys.set(id,this);
 			metronome.bindVoid(onTick);
 			
 			isPlaying = true;
@@ -41,7 +41,6 @@ class Medley {
 	public function stop():Void {
 		if(isPlaying){
 			metronome.unbindVoid(onTick);
-			playingMedleys.remove(id);
 		
 			isPlaying = false;
 		
@@ -66,9 +65,9 @@ class Medley {
 		timeProgress = duration - timeProgress;
 
 		//swap start and end
-		var temp = start;
-		start = end;
-		end = temp;
+		var temp = startValue;
+		startValue = endValue;
+		endValue = temp;
 
 		events.reverse.dispatch();
 	}
@@ -79,8 +78,7 @@ class Medley {
 		timePrevious = timeCurrent;
 
 		if (timeProgress <= duration) {
-			//do tween
-			events.tick.dispatch();
+			events.tick.dispatch(startValue + (endValue - startValue) * (timeProgress / duration));
 		} else {
 			stop();
 			events.end.dispatch();
@@ -91,6 +89,8 @@ class Medley {
 	public var medleys:Array<Medley>;
 	public var timePrevious(default,null):Float;
 	public var timeProgress(default,null):Float;
+	public var startValue:Float;
+	public var endValue:Float;
 
 	/*
 		Duration in seconds.
@@ -106,14 +106,4 @@ class Medley {
 		The Metronome that controlling this Medley.
 	*/
 	public var metronome:IMetronome;
-
-	/*
-		All the playing Medley objects are stored here so they would't be GC.
-	*/
-	static var playingMedleys:IntHash<Medley> = new IntHash<Medley>();
-
-	static var nextId:Int = 0;
-	var id:Int;
-	var start:Float;
-	var end:Float;
 }

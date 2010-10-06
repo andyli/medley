@@ -1,8 +1,29 @@
-//import medley.Pipe;
-//using medley.util.HashUtil;
+package;
+
+import flash.Lib;
+import flash.display.Sprite;
+
 import medley.Medley;
 
-class Test {
+class Test extends Sprite{
+	public function new():Void {
+		super();
+
+		for (i in 0...1){
+			var sp = new Sprite();
+			sp.graphics.beginFill(cast Math.random() * 0xFFFFFF);
+			sp.graphics.drawCircle(0,0,10);
+			sp.x = sp.y = 100;
+			addChild(sp);
+			
+			var m = new Medley();
+			m.duration = 3;
+			m.events.tick.bind(function(val:Float) {
+				sp.x = 100 + val * 100;
+			});
+			m.play();
+		}
+	}
 
 	static public function main():Void {
 	/*
@@ -23,13 +44,12 @@ class Test {
 		b	.play();
 
 	*/
-		var m = new Medley();
-		m.duration = 0.5;
-		m.events.start.bindVoid(function() trace("start"));
-		m.events.play.bindVoid(function() trace("play"));
-		m.events.tick.bindVoid(function() trace(Math.random()));
-		m.events.stop.bindVoid(function() trace("stop"));
-		m.events.end.bindVoid(function() trace("end"));
-		m.play();
+		#if (cpp || neko)
+			Lib.create(function(){
+				Lib.current.addChild(new Test());
+			}, 400,300,24,0xFFFFFF,Lib.RESIZABLE);
+		#else
+			Lib.current.addChild(new Test());
+		#end
 	}
 }

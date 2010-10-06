@@ -1,7 +1,9 @@
-package medley;
+package medley.events;
 
 import hsl.haxe.Signaler;
 import hsl.haxe.DirectSignaler;
+
+import medley.Medley;
 
 class MedleyEvents {
 	public function new(m:Medley):Void {
@@ -11,7 +13,7 @@ class MedleyEvents {
 		end = new DirectSignaler<Void>(m);
 		reset = new DirectSignaler<Void>(m);
 		reverse = new DirectSignaler<Void>(m);
-		tick = new DirectSignaler<Void>(m);
+		tick = new DirectSignaler<Float>(m);
 	}
 
 	public var play:Signaler<Void>;
@@ -20,5 +22,5 @@ class MedleyEvents {
 	public var end:Signaler<Void>;
 	public var reset:Signaler<Void>;
 	public var reverse:Signaler<Void>;
-	public var tick:Signaler<Void>;
+	public var tick:Signaler<Float>;
 }

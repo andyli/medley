@@ -1,26 +1,29 @@
 package medley.metronome;
 
-#if js
-using hsl.haxe.plugins.TimerShortcuts;
+#if (flash || nme || jeash)
+import hsl.haxe.DirectSignaler;
+import flash.events.Event;
 #else
-using hsl.avm2.plugins.DisplayObjectShortcuts;
+using hsl.haxe.plugins.TimerShortcuts;
 #end
 
 class GlobalMetronome {
 
 	static public function getInstance():IMetronome {
 		if (_instance == null) {
-			#if js
-			_timer = new haxe.Timer(40);
-			_timer.run();
-			_instance = _timer.getTickedSignaler();
+			#if (flash || nme || jeash)
+				var sp = flash.Lib.current;
+				_instance = new DirectSignaler<Void>(GlobalMetronome);
+				sp.addEventListener(Event.ENTER_FRAME,function(e:Event) _instance.dispatch());
 			#else
-			_instance = flash.Lib.current.getFrameEnteredSignaler();
+				_timer = new haxe.Timer(40);
+				_instance = _timer.getTickedSignaler();
+				_timer.run();
 			#end
 		}
 		return _instance;
 	}
-	#if js
+	#if !(flash || nme || jeash)
 	static var _timer:Timer;
 	#end
 	static var _instance:IMetronome;
