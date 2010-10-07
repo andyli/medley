@@ -4,6 +4,9 @@ import flash.Lib;
 import flash.display.Sprite;
 
 import medley.Medley;
+import medley.MedleySingle;
+import medley.note.LinearNote;
+
 
 class Test extends Sprite{
 	public function new():Void {
@@ -15,12 +18,15 @@ class Test extends Sprite{
 			sp.graphics.drawCircle(0,0,10);
 			sp.x = sp.y = 100;
 			addChild(sp);
+
+			var m = new MedleySingle(new LinearNote(0,1,3));
+
 			
-			var m = new Medley(medley.easing.Bounce.easeOut);
-			m.duration = 3;
+			//var m = new Medley(medley.easing.Bounce.easeOut,0,1,3);
 			m.events.tick.bind(function(val:Float) {
 				sp.x = 100 + val * 100;
 			});
+			
 			/*
 			m.events.reachStart.bindVoid(function() {
 				trace("reachStart");
@@ -33,9 +39,9 @@ class Test extends Sprite{
 				m.play();
 			});*/
 			m.events.stop.bindVoid(function() {
-				trace("stop");
-				m.timeScale *= -1;
-				m.play();
+				//trace("stop");
+				//m.timeScale *= -1;
+				m.seek(2).play();
 			});
 			m.play();
 		}

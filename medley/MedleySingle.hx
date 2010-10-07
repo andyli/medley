@@ -5,26 +5,28 @@ import medley.easing.Linear;
 import medley.events.MedleyEvents;
 import medley.metronome.GlobalMetronome;
 import medley.metronome.IMetronome;
+import medley.note.INote;
 import haxe.Timer;
 
-class Medley implements IMedley<Medley> {
-	public function new(?ease:Easing, ?startValue:Float = 0, ?endValue:Float = 1, ?duration:Float = 1, ?medleys:Array<IMedley<Dynamic>>):Void {
-		this.ease = ease == null ? Linear.easeNone : ease;
-		this.medleys = medleys == null ? [] : medleys;
+class MedleySingle<N:INote> implements IMedley<MedleySingle<N>> {
+	public function new(note:N):Void {
+		this.note = note;
 		
-		this.startValue = startValue;
-		this.endValue = endValue;
-		this.duration = duration;
+		this.startValue = note.startValue;
+		this.endValue = note.endValue;
+		this.duration = note.duration;
 		timeProgress = 0;
 		timeScale = 1;
 		events = new MedleyEvents(this);
 		metronome = GlobalMetronome.getInstance();
 	}
 
+	public var note:N;
+
 	/*
 		Start playing.
 	*/
-	public function play():Medley {
+	public function play():MedleySingle<N> {
 		if (!isPlaying) {
 			timePrevious = Timer.stamp();
 
@@ -41,7 +43,7 @@ class Medley implements IMedley<Medley> {
 	/*
 		Pause the Medley.
 	*/
-	public function stop():Medley {
+	public function stop():MedleySingle<N> {
 		if(isPlaying){
 			metronome.unbindVoid(onTick);
 		
@@ -56,7 +58,7 @@ class Medley implements IMedley<Medley> {
 	/*
 		Seek to the specific time(in second). Does NOT auto play/stop/tick.
 	*/
-	public function seek(time:Float):Medley {
+	public function seek(time:Float):MedleySingle<N> {
 		timeProgress = time;
 		
 		events.seek.dispatch();
@@ -68,7 +70,7 @@ class Medley implements IMedley<Medley> {
 		Swap the start and end of the Medley. Does NOT auto play/stop/tick.
 		If you want the Medley plays in reverse direction, set timeScale to -1 instead of using this method.
 	*/
-	public function reverse():Medley {
+	public function reverse():MedleySingle<N> {
 		timeProgress = duration - timeProgress;
 
 		//swap start and end
@@ -84,7 +86,7 @@ class Medley implements IMedley<Medley> {
 	/*
 		Calulate the values.
 	*/
-	public function tick(?updateTimeProgress = true):Medley {
+	public function tick(?updateTimeProgress = true):MedleySingle<N> {
 		if (updateTimeProgress) {
 			var timeCurrent = Timer.stamp();
 			timeProgress += (timeCurrent - timePrevious) * timeScale;
@@ -111,15 +113,13 @@ class Medley implements IMedley<Medley> {
 	}
 
 	function dispatchNewValue(val:Float):Void {
-		events.tick.dispatch(ease(val, startValue, endValue - startValue, duration));
+		events.tick.dispatch(note.valueOf(val));
 	}
 
 	/*
 		The object that stores Singlers.
 	*/
 	public var events:MedleyEvents;
-	
-	public var medleys:Array<IMedley<Dynamic>>;
 
 	/*
 		Time stamp(in seconds) of previous tick.
@@ -146,11 +146,6 @@ class Medley implements IMedley<Medley> {
 		Nagative number will make the medley plays in reverse direction.
 	*/
 	public var timeScale:Float;
-
-	/*
-		Easing function that apply to the value of each tick.
-	*/
-	public var ease:Easing;
 
 	/*
 		Duration in seconds.
