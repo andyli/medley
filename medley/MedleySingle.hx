@@ -8,7 +8,7 @@ import medley.metronome.IMetronome;
 import medley.note.INote;
 import haxe.Timer;
 
-class MedleySingle<N:INote> implements IMedley<MedleySingle<N>> {
+class MedleySingle<N:INote> implements IMedley<MedleySingle<N>> #if production , implements haxe.rtti.Generic #end {
 	public function new(note:N):Void {
 		this.note = note;
 		

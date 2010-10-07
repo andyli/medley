@@ -19,7 +19,7 @@ class Test extends Sprite{
 			sp.x = sp.y = 100;
 			addChild(sp);
 
-			var m = new MedleySingle(new LinearNote(0,1,3));
+			var m = new MedleySingle<LinearNote>(new LinearNote(0,1,3));
 
 			
 			//var m = new Medley(medley.easing.Bounce.easeOut,0,1,3);
