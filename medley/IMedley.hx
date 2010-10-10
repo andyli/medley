@@ -3,8 +3,6 @@ package medley;
 import medley.events.MedleyEvents;
 import medley.metronome.IMetronome;
 
-typedef Easing = Float -> Float -> Float -> Float -> Float;
-
 interface IMedley<M:IMedley<Dynamic>> {
 	/*
 		Start playing.
