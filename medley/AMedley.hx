@@ -5,7 +5,7 @@ import medley.metronome.IMetronome;
 import haxe.Timer;
 
 /*
-	Abstract base of Medley.
+	Abstract base for Medley classes.
 */
 class AMedley<M:IMedley<Dynamic>> {
 	private function new():Void {}
@@ -54,23 +54,6 @@ class AMedley<M:IMedley<Dynamic>> {
 	}
 
 	/*
-		Swap the start and end of the Medley. Does NOT auto play/stop/tick.
-		If you want the Medley plays in reverse direction, set timeScale to -1 instead of using this method.
-	*/
-	public function reverse():M {
-		timeProgress = duration - timeProgress;
-
-		//swap start and end
-		var temp = startValue;
-		startValue = endValue;
-		endValue = temp;
-
-		events.reverse.dispatch();
-
-		return cast this;
-	}
-
-	/*
 		Calulate the values.
 	*/
 	public function tick(?updateTimeProgress = true):M {
@@ -84,8 +67,8 @@ class AMedley<M:IMedley<Dynamic>> {
 			dispatchNewValue(timeProgress = 0);
 			stop();
 			events.reachStart.dispatch();
-		} else if (timeProgress >= duration) { //reach end
-			dispatchNewValue(timeProgress = duration);
+		} else if (timeProgress >= getDuration()) { //reach end
+			dispatchNewValue(timeProgress = getDuration());
 			stop();
 			events.reachEnd.dispatch();
 		} else {
@@ -121,12 +104,12 @@ class AMedley<M:IMedley<Dynamic>> {
 	/*
 		Start value.
 	*/
-	public var startValue:Float;
+	public function getStartValue():Float { return Math.NaN; }
 
 	/*
 		End value.
 	*/
-	public var endValue:Float;
+	public function getEndValue():Float { return Math.NaN; }
 
 	/*
 		Time scale that affect the speed of the Medley. Normal is 1.
@@ -137,7 +120,7 @@ class AMedley<M:IMedley<Dynamic>> {
 	/*
 		Duration in seconds.
 	*/
-	public var duration:Float;
+	public function getDuration():Float { return Math.NaN; }
 
 	/*
 		Indicate if the Medley is playing.

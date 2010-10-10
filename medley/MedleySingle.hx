@@ -14,9 +14,6 @@ implements IMedley<MedleySingle<N>>
 		
 		this.note = note;
 		
-		this.startValue = note.startValue;
-		this.endValue = note.endValue;
-		this.duration = note.duration;
 		timeProgress = 0;
 		timeScale = 1;
 		events = new MedleyEvents(this);
@@ -27,5 +24,17 @@ implements IMedley<MedleySingle<N>>
 
 	override function dispatchNewValue(time:Float):Void {
 		events.tick.dispatch(note.valueOf(time));
+	}
+
+	override public function getDuration():Float {
+		return note.duration;
+	}
+
+	override public function getStartValue():Float {
+		return note.startValue;
+	}
+
+	override public function getEndValue():Float {
+		return note.endValue;
 	}
 }

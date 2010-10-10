@@ -3,6 +3,9 @@ package medley;
 import medley.events.MedleyEvents;
 import medley.metronome.IMetronome;
 
+/*
+	Interface for the Medley classes.
+*/
 interface IMedley<M:IMedley<Dynamic>> {
 	/*
 		Start playing.
@@ -18,12 +21,6 @@ interface IMedley<M:IMedley<Dynamic>> {
 		Seek to the specific time(in second). Does NOT auto play/stop/tick.
 	*/
 	public function seek(time:Float):M;
-
-	/*
-		Swap the start and end of the Medley. Does NOT auto play/stop/tick.
-		If you want the Medley plays in reverse direction, set timeScale to -1 instead of using this method.
-	*/
-	public function reverse():M;
 
 	/*
 		Calulate the values.
@@ -48,12 +45,12 @@ interface IMedley<M:IMedley<Dynamic>> {
 	/*
 		Start value.
 	*/
-	public var startValue:Float;
+	public function getStartValue():Float;
 
 	/*
 		End value.
 	*/
-	public var endValue:Float;
+	public function getEndValue():Float;
 
 	/*
 		Time scale that affect the speed of the Medley. Normal is 1.
@@ -64,7 +61,7 @@ interface IMedley<M:IMedley<Dynamic>> {
 	/*
 		Duration in seconds.
 	*/
-	public var duration:Float;
+	public function getDuration():Float;
 
 	/*
 		Indicate if the Medley is playing.

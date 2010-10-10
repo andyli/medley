@@ -7,13 +7,15 @@ import medley.metronome.GlobalMetronome;
 import medley.metronome.IMetronome;
 import haxe.Timer;
 
+using Lambda;
+
 private typedef Easing = Float -> Float -> Float -> Float -> Float;
 
 class Medley
 extends AMedley<Medley>,
 implements IMedley<Medley> 
 {
-	public function new(?medleys:Array<IMedley<Dynamic>>, ?duration:Float = 1, ?ease:Easing):Void {
+	public function new(?medleys:Array<IMedley<Dynamic>>, ?ease:Easing):Void {
 		super();
 		
 		this.ease = ease == null ? Linear.easeNone : ease;
@@ -21,7 +23,6 @@ implements IMedley<Medley>
 		
 		this.startValue = 0;
 		this.endValue = 1;
-		this.duration = duration;
 		timeProgress = 0;
 		timeScale = 1;
 		events = new MedleyEvents(this);
@@ -42,8 +43,8 @@ implements IMedley<Medley>
 			dispatchNewValue(timeProgress = 0);
 			stop();
 			events.reachStart.dispatch();
-		} else if (timeProgress >= duration) { //reach end
-			dispatchNewValue(timeProgress = duration);
+		} else if (timeProgress >= getDuration()) { //reach end
+			dispatchNewValue(timeProgress = getDuration());
 			stop();
 			events.reachEnd.dispatch();
 		} else {
@@ -54,7 +55,19 @@ implements IMedley<Medley>
 	}
 
 	override function dispatchNewValue(time:Float):Void {
-		events.tick.dispatch(ease(time, startValue, endValue - startValue, duration));
+		events.tick.dispatch(ease(time, getStartValue(), getEndValue() - getStartValue(), getDuration()));
+	}
+
+	override public function getDuration():Float {
+		return medleys.fold(function(m:IMedley<Dynamic>,t:Float) return t + m.getDuration(), 0);
+	}
+
+	override public function getStartValue():Float {
+		return startValue;
+	}
+
+	override public function getEndValue():Float {
+		return endValue;
 	}
 	
 	public var medleys:Array<IMedley<Dynamic>>;
@@ -63,4 +76,8 @@ implements IMedley<Medley>
 		Easing function that apply to the value of each tick.
 	*/
 	public var ease:Easing;
+
+
+	private var startValue:Float;
+	private var endValue:Float;
 }

@@ -7,6 +7,7 @@ import medley.Medley;
 import medley.MedleySingle;
 import medley.note.LinearNote;
 
+import medley.util.PropSetter;
 
 class Test extends Sprite{
 	public function new():Void {
