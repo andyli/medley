@@ -4,8 +4,8 @@ import flash.Lib;
 import flash.display.Sprite;
 
 import medley.Medley;
-import medley.MedleySingle;
-import medley.note.LinearNote;
+import medley.easing.Linear;
+import medley.note.EaseNote;
 
 import medley.util.PropSetter;
 
@@ -19,11 +19,8 @@ class Test extends Sprite{
 			sp.graphics.drawCircle(0,0,10);
 			sp.x = sp.y = 100;
 			addChild(sp);
-
-			var m = new MedleySingle<LinearNote>(new LinearNote(0,1,3));
-
 			
-			//var m = new Medley(medley.easing.Bounce.easeOut,0,1,3);
+			var m = new Medley(new EaseNote(0,1,3,Linear.easeNone));
 			m.events.tick.bind(function(val:Float) {
 				sp.x = 100 + val * 100;
 			});
@@ -49,24 +46,26 @@ class Test extends Sprite{
 	}
 
 	static public function main():Void {
-	/*
-		var a = new Pipe();
-		var b = new Pipe();
+		/*
+		var m =
 		
-		a	.blow("[0=== ===1] [2-------- ------0.0]")
-			.note("aa  b     a           b          ")
-			.note("cc  c     c           c          ");
-			
-		b	.blow("[0=== ===1]")
-			.note("p    p    p");
+			Medley
+				.instrument(i1, i2)
+				.____________________________________________________________________________
+				.line(i1,	"[0=== ===1] [2-------- ------0.0]",
+							"aa  b     a           b          ",
+							"cc  c     c           c          ")
+				.line(i2,	"[0=== ===1] ---------- ----------",
+							"p    p    p                      ")
+				.____________________________________________________________________________
+				.line(i1,	"[3=== ===2] ---------- ----------",
+							"c                                ")
+				.____________________________________________________________________________
 
-		a	.blow("[3=== ===2]")
-			.note("c          ");
-			
-		a	.play();
-		b	.play();
+				.finish(); //return a Medley instance.
+		*/
 
-	*/
+	
 		#if (cpp || neko)
 			Lib.create(function(){
 				Lib.current.addChild(new Test());

@@ -1,83 +1,426 @@
 package medley;
 
-import medley.IMedley;
-import medley.easing.Linear;
 import medley.events.MedleyEvents;
 import medley.metronome.GlobalMetronome;
 import medley.metronome.IMetronome;
+import medley.note.INote;
 import haxe.Timer;
 
 using Lambda;
 
-private typedef Easing = Float -> Float -> Float -> Float -> Float;
-
-class Medley
-extends AMedley<Medley>,
-implements IMedley<Medley> 
-{
-	public function new(?medleys:Array<IMedley<Dynamic>>, ?ease:Easing):Void {
-		super();
+class Medley<N:medley.note.INote> {
+	public function new(?note:N, ?children:Medley<Dynamic>):Void {
+		if (children == null) {
+			if (note == null)
+				throw "You must provide either note or children.";
+			
+			this.note = note;
+		} else {
+			if (note != null)
+				throw "You must provide either note or children.";
+			
+			this.children = children;
+		}
 		
-		this.ease = ease == null ? Linear.easeNone : ease;
-		this.medleys = medleys == null ? [] : medleys;
-		
-		this.startValue = 0;
-		this.endValue = 1;
 		timeProgress = 0;
+		timeProgressPasted = 0;
 		timeScale = 1;
+		timePrev = Math.NaN;
+		isAtStart = true;
+		isAtEnd = false;
 		events = new MedleyEvents(this);
 		metronome = GlobalMetronome.getInstance();
+		head = tail = this;
 	}
 
 	/*
 		Calulate the values.
 	*/
-	override public function tick(?updateTimeProgress = true):Medley {
+	public function tick(?updateTimeProgress = true):{ medley:Medley<N>, value:Float, timeExcessed:Float } {
+		var value:Float = Math.NaN;
+		var timeExcessed:Float = Math.NaN;
+		var timeD:Float = 0;
+		
 		if (updateTimeProgress) {
 			var timeCurrent = Timer.stamp();
-			timeProgress += (timeCurrent - timePrevious) * timeScale;
-			timePrevious = timeCurrent;
+			
+			if (timePrev != Math.NaN)
+				timeProgress += (timeD = (timeCurrent - timePrev) * timeScale);
+				
+			timePrev = timeCurrent;
 		}
 
-		if (timeProgress <= 0) { //reach start
-			dispatchNewValue(timeProgress = 0);
-			stop();
-			events.reachStart.dispatch();
-		} else if (timeProgress >= getDuration()) { //reach end
-			dispatchNewValue(timeProgress = getDuration());
-			stop();
-			events.reachEnd.dispatch();
-		} else {
-			dispatchNewValue(timeProgress);
+		if (children == null) { //this is Medley that plays single Note.
+			if (timeProgress <= 0) { //reach start
+				isAtStart = true;
+				timeExcessed = -timeProgress;
+				value = timeProgress = 0;
+				stop();
+				dispatchNewTick(value);
+				events.reachStart.dispatch(timeExcessed);
+			} else if (timeProgress >= getDuration()) { //reach end
+				isAtEnd = true;
+				timeExcessed = timeProgress - getDuration();
+				value = timeProgress = getDuration();
+				stop();
+				dispatchNewTick(value);
+				events.reachEnd.dispatch(timeExcessed);
+			} else {
+				isAtStart = isAtEnd = false;
+				dispatchNewTick(value = timeProgress);
+			}
+		} else { //this is Medley that plays children.
+		/*
+			var curM = currentMedleyNode.val;
+			value = curM.seek(timeProgress - timeProgressPasted).tick(false).value;
+			
+			if (timeScale > 0) {
+				if (curM.isAtEnd) {
+					while (true) {
+						timeProgressPasted += curM.getDuration();
+						if (currentMedleyNode.hasNext()){
+							currentMedleyNode = currentMedleyNode.next;
+						
+						}
+						var remainTime = timeProgress - timeProgressPasted;
+					}
+				} else {
+					isAtStart = isAtEnd = false;
+					dispatchNewTick(value);
+				}
+			} else {
+				if (curM.isAtStart) {
+					
+				} else {
+					isAtStart = isAtEnd = false;
+					dispatchNewTick(value);
+				}
+			}
+			*/
 		}
 
-		return cast this;
+		return { medley:this, value:value, timeExcessed:timeExcessed };
 	}
 
-	override function dispatchNewValue(time:Float):Void {
-		events.tick.dispatch(ease(time, getStartValue(), getEndValue() - getStartValue(), getDuration()));
+	var timeProgressPasted:Float;
+
+	function onTick():Void {
+		tick();
 	}
 
-	override public function getDuration():Float {
-		return medleys.fold(function(m:IMedley<Dynamic>,t:Float) return t + m.getDuration(), 0);
+	function dispatchNewTick(time:Float):Void {
+		events.tick.dispatch(note.valueOf(time));
 	}
-
-	override public function getStartValue():Float {
-		return startValue;
-	}
-
-	override public function getEndValue():Float {
-		return endValue;
-	}
-	
-	public var medleys:Array<IMedley<Dynamic>>;
 
 	/*
-		Easing function that apply to the value of each tick.
+		Start playing.
 	*/
-	public var ease:Easing;
+	public function play():Medley<N> {
+		if (!isPlaying) {
+			timePrev = Timer.stamp();
 
+			metronome.bindVoid(onTick);
+			
+			isPlaying = true;
+			
+			events.play.dispatch();
+		}
 
-	private var startValue:Float;
-	private var endValue:Float;
+		return this;
+	}
+
+	/*
+		Pause the Medley.
+	*/
+	public function stop():Medley<N> {
+		if(isPlaying){
+			metronome.unbindVoid(onTick);
+		
+			isPlaying = false;
+		
+			events.stop.dispatch();
+		}
+
+		return this;
+	}
+
+	/*
+		Seek to the specific time(in second). Does NOT auto play/stop/tick.
+	*/
+	public function seek(time:Float):Medley<N> {
+		timeProgress = time;
+		
+		events.seek.dispatch();
+
+		return this;
+	}
+
+	/*
+		Time stamp(in seconds) of prev tick(true).
+	*/
+	public var timePrev(default,null):Float;
+
+	/*
+		Progress of the Medley in seconds.
+	*/
+	public var timeProgress(default,null):Float;
+
+	/*
+		Start value.
+	*/
+	public function getStartValue():Float {
+		return _children == null ? note.startValue : _children.getStartValue();
+	}
+
+	/*
+		End value.
+	*/
+	public function getEndValue():Float {
+		return _children == null ? note.endValue : _children.tail.getEndValue();
+	}
+
+	/*
+		Duration in seconds.
+	*/
+	public function getDuration():Float {
+		return _children == null ? note.duration : _children.fold(function(m:Medley<Dynamic>,t:Float) return t + m.getDuration(), 0);
+	}
+
+	/*
+		Time scale that affect the speed of the Medley. Normal is 1.
+		Nagative number will make the medley plays in reverse direction.
+	*/
+	public var timeScale:Float;
+
+	/*
+		Indicate if the Medley is playing.
+	*/
+	public var isPlaying(default,null):Bool;
+
+	/*
+		Indicate if the Medley is at its start.
+	*/
+	public var isAtStart(default,null):Bool;
+
+	/*
+		Indicate if the Medley is at its end.
+	*/
+	public var isAtEnd(default,null):Bool;
+
+	
+
+	/*
+		The Metronome that controlling this Medley.
+	*/
+	public var metronome(default,null):IMetronome;
+
+	/*
+		The object that stores Singlers.
+	*/
+	public var events(default,null):MedleyEvents;
+
+	/*
+		The head of children Medley chain of this Medley.
+		If it is set to a Medley that is not a head, its head is used.
+	*/
+	public var children(getChildren,setChildren):Medley<Dynamic>;
+	var _children:Medley<Dynamic>;
+	inline function getChildren():Medley<Dynamic> {
+		return _children;
+	}
+	function setChildren(m:Medley<Dynamic>):Medley<Dynamic> {
+		if (m == null) {
+			//unlink current children
+			if (_children != null) {
+				for (c in _children) {
+					c._parent = null;
+				}
+			}
+
+			_children = null;
+		} else {
+			if (_children != m.head) {
+				//unlink current children
+				if (_children != null) {
+					for (c in _children) {
+						c._parent = null;
+					}
+				}
+
+				_children = m.head;
+				for (c in m.head) {
+					c._parent = this;
+				}
+			}
+		}
+		return m;
+	}
+	
+	/*
+		Parent of this Medley.
+	*/
+	public var parent(getParent,setParent):Medley<Dynamic>;
+	var _parent:Medley<Dynamic>;
+	inline function getParent():Medley<Dynamic>{
+		return _parent;
+	}
+	function setParent(m:Medley<Dynamic>):Medley<Dynamic> {
+		if (m != null) {
+			//unlink target's children
+			if (m._children != null) {
+				for (c in m._children) {
+					c._parent = null;
+				}
+			}
+			
+			m._children = head;
+		}
+
+		if (_parent != null) _parent._children = null;
+		
+		//propagate parent
+		for (c in head){
+			c._parent = m;
+		}
+		
+		return m;
+	}
+
+	/*
+		Prev Medley.
+		If it is linked to a Medley that has parent, this chain becomes the children of that parent.
+	*/
+	public var prev(getPrev,setPrev):Medley<Dynamic>;
+	var _prev:Medley<Dynamic>;
+	inline function getPrev():Medley<Dynamic>{
+		return _prev;
+	}
+	function setPrev(m:Medley<Dynamic>):Medley<Dynamic> {
+		if (_prev != m){
+			if (_prev != null) _prev._next = null;
+			
+			//change tail of current prevs
+			var curPrev = _prev;
+			while (curPrev != null) {
+				curPrev.tail = _prev;
+				curPrev = curPrev._prev;
+			}
+			
+			_prev = m;
+
+			if (_parent != null && head == this) {
+				_parent._children = null;
+			}
+			_parent = m == null ? null : m._parent;
+			
+			if (m != null){
+				m._next = this;
+				head = m.head;
+
+				//propagate tail
+				var mPrev:Medley<Dynamic> = m;
+				do {
+					mPrev.tail = tail;
+					mPrev = mPrev._prev;
+				} while (mPrev != null);
+			} else {
+				head = this;
+			}
+
+			//propagate head and parent
+			for (c in this){
+				c.head = head;
+				c._parent = _parent;
+			}
+		}
+		return m;
+	}
+
+	/*
+		Next Medley.
+		If it has parent, this linked Medley chain becomes the children of this parent.
+	*/
+	public var next(getNext,setNext):Medley<Dynamic>;
+	var _next:Medley<Dynamic>;
+	inline function getNext():Medley<Dynamic>{
+		return _next;
+	}
+	function setNext(m:Medley<Dynamic>):Medley<Dynamic> {
+		if (_next != m){
+			if (_next != null) _next._prev = null;
+			
+			//change head and parent of current nexts
+			var curNext = _next;
+			while (curNext != null) {
+				curNext.head = _next;
+				curNext._parent = null;
+				curNext = curNext._next;
+			}
+			
+			_next = m;
+			
+			if (m != null){
+				m._prev = this;
+				tail = m.tail;
+
+				if (m._parent != null) {
+					if (m.head == m) {
+						m.parent = null; //using parent setter to unlink parent
+					} else {
+						m.prev = null; //using prev setter to unlink prev and parent
+					}
+				}
+
+				//propagate head and parent
+				for (c in m) {
+					c.head = head;
+					c._parent = _parent;
+				}
+			} else {
+				tail = this;
+			}
+
+			//propagate tail
+			var thisPrev:Medley<Dynamic> = this;
+			do {
+				thisPrev.tail = tail;
+				thisPrev = thisPrev._prev;
+			} while (thisPrev != null);
+		}
+		return m;
+	}
+
+	public var head(default,null):Medley<Dynamic>;
+	public var tail(default,null):Medley<Dynamic>;
+
+	/*
+		The Note of this Medley.
+	*/
+	public var note(default,null):N;
+
+	/*
+		Iterate from this to tail.
+		Caution: a endless loop will be created if the linked-list is a loop.
+	*/
+	public function iterator():Iterator<Medley<Dynamic>> {
+		return new MedleyIterator(this);
+	}
+}
+
+class MedleyIterator {
+	var _head:Medley<Dynamic>;
+	
+	public function new(head:Medley<Dynamic>):Void {
+		_head = head;
+	}
+
+	inline public function hasNext():Bool {
+		return _head != null;
+	}
+
+	inline public function next():Medley<Dynamic> {
+		var ret = _head;
+		_head = _head.next;
+		return ret;
+	}
 }

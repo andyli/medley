@@ -3,10 +3,10 @@ package medley.events;
 import hsl.haxe.Signaler;
 import hsl.haxe.DirectSignaler;
 
-import medley.IMedley;
+import medley.Medley;
 
 class MedleyEvents {
-	public function new(m:IMedley<Dynamic>):Void {
+	public function new(m:Medley<Dynamic>):Void {
 		play = new DirectSignaler<Void>(m);
 		stop = new DirectSignaler<Void>(m);
 		reachStart = new DirectSignaler<Void>(m);
