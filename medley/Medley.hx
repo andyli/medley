@@ -4,6 +4,7 @@ import medley.events.MedleyEvents;
 import medley.metronome.GlobalMetronome;
 import medley.metronome.IMetronome;
 import medley.note.INote;
+import hsl.haxe.Signaler;
 import haxe.Timer;
 
 using Lambda;
@@ -28,6 +29,8 @@ class Medley<N:medley.note.INote> {
 		timePrev = Math.NaN;
 		isAtStart = true;
 		isAtEnd = false;
+		repeat = 0;
+		yoyo = false;
 		events = new MedleyEvents(this);
 		metronome = GlobalMetronome.getInstance();
 		head = tail = this;
@@ -50,53 +53,81 @@ class Medley<N:medley.note.INote> {
 			timePrev = timeCurrent;
 		}
 
-		if (children == null) { //this is Medley that plays single Note.
+		if (_children == null) { //this is Medley that plays single Note.
 			if (timeProgress <= 0) { //reach start
 				isAtStart = true;
 				timeExcessed = -timeProgress;
-				value = timeProgress = 0;
-				stop();
-				dispatchNewTick(value);
-				events.reachStart.dispatch(timeExcessed);
+				
+				dispatchNewTick(note.valueOf(value = timeProgress = 0));
+
+				if (timeScale < 0) {
+					if (repeat == 0) {
+						if (_prev != null) {
+							_stop(false);
+							_prev._play(false);
+							_prev.timeProgress = timeExcessed;
+						} else {
+							_stop(true);
+						}
+						events.reachStart.dispatch(timeExcessed);
+					} else {
+						if (repeat > 0) --repeat;
+
+						if (yoyo) {
+							timeScale *= -1;
+							events.reachStart.dispatch(timeExcessed);
+							timeProgress = timeExcessed;
+						} else {
+							timeProgress = getDuration();
+							events.reachStart.dispatch(timeExcessed);
+						}
+					}
+				} else {
+					events.reachStart.dispatch(timeExcessed);
+				}
 			} else if (timeProgress >= getDuration()) { //reach end
 				isAtEnd = true;
 				timeExcessed = timeProgress - getDuration();
 				value = timeProgress = getDuration();
-				stop();
-				dispatchNewTick(value);
-				events.reachEnd.dispatch(timeExcessed);
-			} else {
-				isAtStart = isAtEnd = false;
-				dispatchNewTick(value = timeProgress);
-			}
-		} else { //this is Medley that plays children.
-		/*
-			var curM = currentMedleyNode.val;
-			value = curM.seek(timeProgress - timeProgressPasted).tick(false).value;
-			
-			if (timeScale > 0) {
-				if (curM.isAtEnd) {
-					while (true) {
-						timeProgressPasted += curM.getDuration();
-						if (currentMedleyNode.hasNext()){
-							currentMedleyNode = currentMedleyNode.next;
-						
+
+				dispatchNewTick(note.valueOf(value));
+
+				if (timeScale > 0){
+					if (repeat == 0) {
+						if (_next != null) {
+							_stop(false);
+							_next._play(false);
+							_next.timeProgress = timeExcessed;
+						} else {
+							_stop(true);
 						}
-						var remainTime = timeProgress - timeProgressPasted;
+						events.reachEnd.dispatch(timeExcessed);
+					} else {
+						if (repeat > 0) --repeat;
+
+						if (yoyo) {
+							timeScale *= -1;
+							timeProgress = getDuration() - timeExcessed;
+							events.reachEnd.dispatch(timeExcessed);
+						} else {
+							events.reachEnd.dispatch(timeExcessed);
+							timeProgress = 0;
+							tick(false);
+							timeProgress = timeExcessed;
+						}
 					}
 				} else {
-					isAtStart = isAtEnd = false;
-					dispatchNewTick(value);
+					events.reachEnd.dispatch(timeExcessed);
 				}
 			} else {
-				if (curM.isAtStart) {
-					
-				} else {
-					isAtStart = isAtEnd = false;
-					dispatchNewTick(value);
-				}
+				isAtStart = isAtEnd = false;
+				dispatchNewTick(note.valueOf(value = timeProgress));
 			}
-			*/
+		} else { //this is Medley that plays children.
+			var result = currentChild.tick(updateTimeProgress);
+			value = result.value;
+			//TODO
+			timeExcessed = result.timeExcessed;
 		}
 
 		return { medley:this, value:value, timeExcessed:timeExcessed };
@@ -108,15 +139,32 @@ class Medley<N:medley.note.INote> {
 		tick();
 	}
 
-	function dispatchNewTick(time:Float):Void {
-		events.tick.dispatch(note.valueOf(time));
+	function dispatchNewTick(val:Float):Void {
+		events.tick.dispatch(val);
+		if (_parent != null) _parent.dispatchNewTick(val);
+	}
+
+	function dispatch(signaler:Signaler<Dynamic>, ?val:Dynamic = null):Void {
+		signaler.dispatch(val);
 	}
 
 	/*
 		Start playing.
 	*/
 	public function play():Medley<N> {
+		_play(true);
+
+		return this;
+	}
+	function _play(toParent:Bool):Void {
 		if (!isPlaying) {
+			if (toParent && _parent != null) {
+				if (_parent.currentChild != null) {
+					_parent.currentChild.stop();
+				}
+				_parent.currentChild = this;
+			}
+		
 			timePrev = Timer.stamp();
 
 			metronome.bindVoid(onTick);
@@ -124,24 +172,40 @@ class Medley<N:medley.note.INote> {
 			isPlaying = true;
 			
 			events.play.dispatch();
-		}
 
-		return this;
+			tick(false);
+
+			if (toParent) {
+				var p = _parent;
+				while (p != null) {
+					p.dispatch(p.events.play);
+					p = p._parent;
+				}
+			}
+		}
 	}
 
 	/*
 		Pause the Medley.
 	*/
 	public function stop():Medley<N> {
+		_stop(true);
+
+		return this;
+	}
+	function _stop(toParent:Bool):Void {
 		if(isPlaying){
 			metronome.unbindVoid(onTick);
 		
 			isPlaying = false;
 		
 			events.stop.dispatch();
-		}
 
-		return this;
+			if (toParent && _parent != null) {
+				_parent.currentChild = null;
+				_parent.stop();
+			}
+		}
 	}
 
 	/*
@@ -151,6 +215,15 @@ class Medley<N:medley.note.INote> {
 		timeProgress = time;
 		
 		events.seek.dispatch();
+
+		if (_parent != null) {
+			//TODO
+			var p = _parent;
+			while (p != null) {
+				p.dispatch(p.events.seek);
+				p = p._parent;
+			}
+		}
 
 		return this;
 	}
@@ -390,8 +463,30 @@ class Medley<N:medley.note.INote> {
 		return m;
 	}
 
+	/*
+		The head(1st one) of the whole Medley chain.
+	*/
 	public var head(default,null):Medley<Dynamic>;
+	
+	/*
+		The tail(last one) of the whole Medley chain.
+	*/
 	public var tail(default,null):Medley<Dynamic>;
+
+	/*
+		Current playing child.
+	*/
+	public var currentChild(default,null):Medley<Dynamic>;
+
+	/*
+		The Medley will auto repeat for the value of it. Default is 0. Set it to -1 for end-less repeat.
+	*/
+	public var repeat:Int;
+
+	/*
+		If set to true, the Medlay will auto reverse its direction when it reach end/start. Should also set repeat to a non-zero value. Default is false.
+	*/
+	public var yoyo:Bool;
 
 	/*
 		The Note of this Medley.

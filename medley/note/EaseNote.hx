@@ -15,6 +15,6 @@ class EaseNote implements INote {
 	public var duration(default,null):Float;
 	public var ease(default,null):Easing;
 	inline public function valueOf(pos:Float):Float {
-		return ease(pos, startValue, endValue, duration);
+		return ease(pos, startValue, endValue-startValue, duration);
 	}
 }
