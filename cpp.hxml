@@ -1,8 +1,9 @@
--main Test
+-main medley.test.Test
 -cpp bin
 -lib hxcpp
 -lib nme
 -lib hsl-1
+-lib utest
 --remap flash:nme
 
 -cmd ./bin/Test
