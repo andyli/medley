@@ -37,6 +37,21 @@ class Medley<N:medley.note.INote> {
 	}
 
 	/*
+		Free memory. Not necessary since normally gc will do it job.
+	*/
+	public function destroy():Void {
+		stop();
+		events.destroy();
+		events = null;
+		head = tail = null;
+		_prev = _next = null;
+		_parent = _children = null;
+		currentChild = null;
+		metronome = null;
+		note = null;
+	}
+
+	/*
 		Calulate the values.
 	*/
 	public function tick(?updateTimeProgress = true):{ medley:Medley<N>, value:Float, timeExcessed:Float } {

@@ -1,0 +1,9 @@
+-main medley.test.Test
+-js bin/js/Test.js
+-cp /Volumes/DATA/repo/jeash
+-D jeash
+-lib hsl-1
+-lib utest
+--remap flash:jeash
+
+-cmd open bin/Test.html

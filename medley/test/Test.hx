@@ -18,6 +18,7 @@ class Test {
 		var runner = new Runner();
 		runner.addCase(new TestChain());
 		runner.addCase(new TestTween());
+		runner.addCase(new TestMemory());
 		Report.create(runner);
 		runner.run();
 	}
