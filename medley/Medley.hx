@@ -4,6 +4,7 @@ import medley.events.MedleyEvents;
 import medley.metronome.GlobalMetronome;
 import medley.metronome.IMetronome;
 import medley.note.INote;
+import medley.util.MedleyIterators.MedleyIteratorNext;
 import hsl.haxe.Signaler;
 import haxe.Timer;
 
@@ -513,24 +514,6 @@ class Medley<N:medley.note.INote> {
 		Caution: a endless loop will be created if the linked-list is a loop.
 	*/
 	public function iterator():Iterator<Medley<Dynamic>> {
-		return new MedleyIterator(this);
-	}
-}
-
-class MedleyIterator {
-	var _head:Medley<Dynamic>;
-	
-	public function new(head:Medley<Dynamic>):Void {
-		_head = head;
-	}
-
-	inline public function hasNext():Bool {
-		return _head != null;
-	}
-
-	inline public function next():Medley<Dynamic> {
-		var ret = _head;
-		_head = _head.next;
-		return ret;
+		return new MedleyIteratorNext(this);
 	}
 }
