@@ -2,9 +2,7 @@ package medley.test;
 
 import flash.display.Sprite;
 import flash.geom.Point;
-import flash.utils.TypedDictionary;
 import flash.Lib;
-import hsl.haxe.Signal;
 import utest.Assert;
 import medley.Medley;
 import medley.note.EaseNote;
@@ -18,7 +16,7 @@ class TestMemory {
 	public function testSimpleMedley():Void {
 		var trash = new Trash();
 
-		var numOfSp = 5000;
+		var numOfSp = 500;
 		var init = new Point(Lib.current.stage.stageWidth*0.5, Lib.current.stage.stageHeight*0.5);
 		for (i in 0...numOfSp) {
 			var sp = new Sprite();
@@ -53,11 +51,64 @@ class TestMemory {
 		}
 		
 		var assert = Assert.createAsync(function(){
-			Assert.isTrue(trash.isEmpty());
-			Assert.equals(0,trash.garbages().count());
+			Assert.equals(0,trash.garbages().length);
 		}, 2000);
 
-		haxe.Timer.delay(assert,1100);
+		haxe.Timer.delay(assert,1500);
+	}
+
+	public function testChainedMedley():Void {
+		var trash = new Trash();
+
+		var numOfSp = 500;
+		var init = new Point(Lib.current.stage.stageWidth*0.5, Lib.current.stage.stageHeight*0.5);
+		for (i in 0...numOfSp) {
+			var sp = new Sprite();
+			sp.graphics.beginFill(Std.int(Math.random()*0xFFFFFF));
+			sp.graphics.drawCircle(0,0,4);
+			Lib.current.addChild(sp);
+			
+			var target = new Point(Math.random()*Lib.current.stage.stageWidth, Math.random()*Lib.current.stage.stageHeight);
+			
+			var m1 = new Medley(new EaseNote(1, 0, 0.3, Linear.easeNone));
+			var m2 = new Medley(new EaseNote(0, 1, 0.3, Linear.easeNone));
+			var m3 = new Medley(new EaseNote(1, 0, 0.3, Linear.easeNone));
+
+			m1.next = m2;
+			m2.next = m3;
+			
+			var onTick = function(val:Float) {
+				var r = Point.interpolate(init,target,val);
+				sp.x = r.x;
+				sp.y = r.y;
+			};
+			
+			var onEnd = function() {
+				sp.parent.removeChild(sp);
+				trash.throws(sp);
+				trash.throws(m1);
+				trash.throws(m2);
+				trash.throws(m3);
+				//m1.destroy();
+				//m2.destroy();
+				//m3.destroy();
+				if (--numOfSp == 0) { //if all Medley are ended.
+					Trash.collectAll();
+				}
+			};
+			
+			m1.events.tick.bind(onTick);
+			m2.events.tick.bind(onTick);
+			m3.events.tick.bind(onTick);
+			m3.events.reachEnd.bindVoid(onEnd);
+			m1.play();
+		}
+		
+		var assert = Assert.createAsync(function(){
+			Assert.equals(0,trash.garbages().length);
+		}, 2000);
+
+		haxe.Timer.delay(assert,1500);
 	}
 }
 
@@ -105,10 +156,9 @@ class Trash {
 	}
 
 	/*
-		Trigger GC. Throws an error if it is not running in a debugger.
+		Trigger GC.
 	*/
 	static public function collectAll():Void {
-		if (!Capabilities.isDebugger) throw "System.gc() only works on flash debugger.";
 		System.gc();
 	}
 
