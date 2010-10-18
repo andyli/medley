@@ -16,13 +16,13 @@ class MedleyEvents {
 		tick = new DirectSignaler<Float>(m);
 	}
 
-	public var play:Signaler<Void>;
-	public var stop:Signaler<Void>;
-	public var reachStart:Signaler<Float>;
-	public var reachEnd:Signaler<Float>;
-	public var seek:Signaler<Void>;
-	public var reverse:Signaler<Void>;
-	public var tick:Signaler<Float>;
+	public var play(default,null):Signaler<Void>;
+	public var stop(default,null):Signaler<Void>;
+	public var reachStart(default,null):Signaler<Float>;
+	public var reachEnd(default,null):Signaler<Float>;
+	public var seek(default,null):Signaler<Void>;
+	public var reverse(default,null):Signaler<Void>;
+	public var tick(default,null):Signaler<Float>;
 
 	public function destroy():Void {
 		play = null;
