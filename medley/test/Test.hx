@@ -1,5 +1,6 @@
 package medley.test;
 
+import flash.system.Capabilities;
 import utest.Runner;
 import utest.ui.Report;
 
@@ -15,6 +16,7 @@ class Test {
 	}
 
 	static function init():Void {
+		trace(Capabilities.isDebugger);
 		var runner = new Runner();
 		runner.addCase(new TestChain());
 		runner.addCase(new TestTween());

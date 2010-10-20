@@ -301,7 +301,18 @@ class Medley<N:medley.note.INote> {
 	/*
 		The Metronome that controlling this Medley.
 	*/
-	public var metronome(default,null):IMetronome;
+	public var metronome(getMetronome, setMetronome):IMetronome;
+	var _metronome:IMetronome;
+	inline function getMetronome():IMetronome {
+		return _metronome;
+	}
+	function setMetronome(m:IMetronome):IMetronome {
+		if (isPlaying) {
+			_metronome.unbindVoid(onTick);
+			m.bindVoid(onTick);
+		}
+		return _metronome = m;
+	}
 
 	/*
 		The object that stores Singlers.
@@ -310,7 +321,7 @@ class Medley<N:medley.note.INote> {
 
 	/*
 		The head of children Medley chain of this Medley.
-		If it is set to a Medley that is not a head, its head is used.
+		If it is set to a Medley that is not a head, the head of that medley is used.
 	*/
 	public var children(getChildren,setChildren):Medley<Dynamic>;
 	var _children:Medley<Dynamic>;
@@ -511,7 +522,7 @@ class Medley<N:medley.note.INote> {
 
 	/*
 		Iterate from this to tail.
-		Caution: a endless loop will be created if the linked-list is a loop.
+		Caution: a endless loop will be created if the linked-list is a loop. You should always use "repeat" if you want a loop.
 	*/
 	public function iterator():Iterator<Medley<Dynamic>> {
 		return new MedleyIteratorNext(this);
