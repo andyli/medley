@@ -16,7 +16,7 @@ class Test {
 	}
 
 	static function init():Void {
-		trace(Capabilities.isDebugger);
+		//trace(Capabilities.isDebugger);
 		var runner = new Runner();
 		runner.addCase(new TestChain());
 		runner.addCase(new TestTween());

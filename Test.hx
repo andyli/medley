@@ -3,6 +3,7 @@ package;
 import flash.Lib;
 import flash.display.Sprite;
 
+import medley.Composer;
 import medley.Medley;
 import medley.easing.Linear;
 import medley.note.EaseNote;
@@ -50,7 +51,16 @@ class Test extends Sprite{
 
 				.finish(); //return a Medley instance.
 		*/
-
+		
+		var stringsMedley = new Composer()
+			.writeFor(["violin", "viola", "Cello"])
+			.write("violin",	"[0=== ===1] [2-------- ------0.0]",
+							[	"aa  b     a           b          ",
+								"cc  c     c           c          "])
+			.write("viola", 	"[0=== ===1] ---------- ----------",
+							[	"p    p    p                      "])
+			.____________________________________________________________________________()
+			.finish();
 	
 		#if (cpp || neko)
 			Lib.create(function(){
