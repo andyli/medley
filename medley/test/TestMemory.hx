@@ -41,7 +41,7 @@ class TestMemory {
 				trash.throws(m.events);
 				//m.destroy();
 				if (--numOfSp == 0) { //if all Medley are ended.
-					Trash.collectAll();
+					haxe.Timer.delay(Trash.collectAll,0);
 				}
 			};
 			
@@ -49,12 +49,11 @@ class TestMemory {
 			m.events.reachEnd.bindVoid(onEnd);
 			m.play();
 		}
-		
 		var assert = Assert.createAsync(function(){
 			Assert.equals(0,trash.garbages().length);
 		}, 2000);
 
-		haxe.Timer.delay(assert,1500);
+		haxe.Timer.delay(assert,1800);
 	}
 
 	public function testChainedMedley():Void {
@@ -93,7 +92,7 @@ class TestMemory {
 				//m2.destroy();
 				//m3.destroy();
 				if (--numOfSp == 0) { //if all Medley are ended.
-					Trash.collectAll();
+					haxe.Timer.delay(Trash.collectAll,0);
 				}
 			};
 			
@@ -113,10 +112,10 @@ class TestMemory {
 }
 
 //http://gist.github.com/632717
+
 #if flash9
 import flash.utils.TypedDictionary;
-import flash.system.System;
-import flash.system.Capabilities;
+import flash.net.LocalConnection;
 #else
 #error
 #end
@@ -159,7 +158,15 @@ class Trash {
 		Trigger GC.
 	*/
 	static public function collectAll():Void {
-		System.gc();
+		//flash.system.System.gc(); //it does not collect all the garbages...
+		
+		// unsupported hack that seems to force a *full* GC
+		try {
+			var lc1:LocalConnection = new LocalConnection();
+			var lc2:LocalConnection = new LocalConnection();
+			lc1.connect('name');
+			lc2.connect('name');
+		} catch (e:Dynamic) { }
 	}
 
 	var dict:TypedDictionary<Dynamic,String>;
