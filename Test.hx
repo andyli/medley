@@ -50,7 +50,7 @@ class Test extends Sprite{
 				.____________________________________________________________________________
 
 				.finish(); //return a Medley instance.
-		*/
+		
 		
 		var stringsMedley = new Composer()
 			.writeFor(["violin", "viola", "Cello"])
@@ -60,7 +60,7 @@ class Test extends Sprite{
 			.write("viola", 	"[0=== ===1] ---------- ----------",
 							[	"p    p    p                      "])
 			.____________________________________________________________________________()
-			.finish();
+			.finish();*/
 	
 		#if (cpp || neko)
 			Lib.create(function(){

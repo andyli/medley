@@ -11,7 +11,7 @@ import medley.easing.Linear;
 using Lambda;
 
 class TestMemory {
-	public function new(){}
+	public function new() { }
 
 	public function testSimpleMedley():Void {
 		var trash = new Trash();
@@ -41,7 +41,7 @@ class TestMemory {
 				trash.throws(m.events);
 				//m.destroy();
 				if (--numOfSp == 0) { //if all Medley are ended.
-					haxe.Timer.delay(Trash.collectAll,0);
+					haxe.Timer.delay(Trash.collectAll, 100);
 				}
 			};
 			
@@ -51,7 +51,7 @@ class TestMemory {
 		}
 		var assert = Assert.createAsync(function(){
 			Assert.equals(0,trash.garbages().length);
-		}, 2000);
+		}, 2500);
 
 		haxe.Timer.delay(assert,1800);
 	}
@@ -92,7 +92,7 @@ class TestMemory {
 				//m2.destroy();
 				//m3.destroy();
 				if (--numOfSp == 0) { //if all Medley are ended.
-					haxe.Timer.delay(Trash.collectAll,0);
+					haxe.Timer.delay(Trash.collectAll, 100);
 				}
 			};
 			
@@ -105,7 +105,7 @@ class TestMemory {
 		
 		var assert = Assert.createAsync(function(){
 			Assert.equals(0,trash.garbages().length);
-		}, 2000);
+		}, 2500);
 
 		haxe.Timer.delay(assert,1500);
 	}
@@ -158,7 +158,8 @@ class Trash {
 		Trigger GC.
 	*/
 	static public function collectAll():Void {
-		//flash.system.System.gc(); //it does not collect all the garbages...
+		flash.system.System.gc();
+		flash.system.System.gc(); //it does not collect all the garbages...
 		
 		// unsupported hack that seems to force a *full* GC
 		try {
